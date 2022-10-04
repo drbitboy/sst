@@ -20,6 +20,7 @@ main(int argc, char** argv)
     int o_nonblock = 0;
     size_t tries;
     size_t eagains;
+    int fork_reader = 0;
 
     /* Handle input arguments */
     for (iarg=1; iarg<argc; ++iarg)
@@ -121,6 +122,15 @@ main(int argc, char** argv)
             o_nonblock = O_NONBLOCK;
         }
 
+        /* Fork a reader for the data
+         * --fork-reader
+         * N.B. Default is to not fork a reader
+         */
+        else if (!strcmp(arg,"--fork-reader"))
+        {
+            fork_reader = 1;
+        }
+
         else
         {
            fprintf(stderr, "Unknown option:  [%s]\n", arg);
@@ -140,6 +150,7 @@ main(int argc, char** argv)
     if (tty_name && send_count > 0)
     {
     SEQUENCE8BIT s8;   /* used by send_chars below (cf. stty.h) */
+    int fd_reader_pipe = 0;
 
         /* Write test array data (see sst.h) to TTY (or file) */
         ssize_t sc;
@@ -155,6 +166,11 @@ main(int argc, char** argv)
         }
         if (debug) { fprintf(stderr,"Opened [%s]; fd=%d\n", tty_name, fd); }
         if (0>fd) { perror(tty_name); }
+
+	/* Fork reader of these data */
+	fd_reader_pipe = fork_reader ? recv_chars(tty_name, send_count)
+		                     : 0;
+        if (0 > fd_reader_pipe) { return -1; }
 
         /* Write test data */
         sc = send_chars(fd, send_count, &s8, &tries, &eagains);

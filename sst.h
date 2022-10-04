@@ -8,6 +8,11 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 /***********************************************************************
  * Stream of 8-bit characters, alternating high bit 8, finish with CRLF:
@@ -148,5 +153,156 @@ send_chars(int fd, size_t remaining, pSEQUENCE8BIT pseq8
         pseq8->p += iwrite;
     }
     return lsent;
+}
+
+typedef struct RECVSTATUSstr
+{
+    char status;
+    int m_errno;
+    size_t count;
+} RECVSTATUS, *pRECVSTATUS;
+
+/* Fork process to read loopback data sent by send_char(...) above */
+/* Return value:  -1 or file descriptor of read pipe from data reader */
+static int
+recv_chars(char* tty_name, size_t count)
+{
+    int fdtty;
+    int fdpipes[2];
+    pid_t gcpid;     /* Grandchild PID */
+    pid_t ppid;      /* Parent (child of grandparent) PID */
+    RECVSTATUS buf;
+
+    memset(&buf, 0, sizeof buf);
+
+    /* Open bi-directional pipe pair to get grandchild results */
+    if (0 > pipe(fdpipes))
+    {
+        perror("recv_chars=>pipe");
+        return -1;
+    }
+
+    /* Fork child of grandparent (parent), which will fork grandchild */
+    if (0 > (ppid = fork()))
+    {
+        perror("recv_chars=>fork");
+        return -1;
+    };
+
+    /* Grandparent (main process) waits
+     * - first for 1st child (parent) to exit after forking grandchild,
+     * - then for read ack via pipe from grandchild
+     */
+    if (ppid)
+    {
+        fd_set rfds;
+        struct timeval tv;
+        int retval;
+
+        close(fdpipes[1]);   /* Grandparent closes write pipe */
+
+        /* Wait for 1st child (parent) exit after forking grandchild */
+        if ((-1==waitpid(ppid,0,0)))
+        {
+            perror("recv_char=>waitpid");
+            close(fdpipes[0]);
+            return -1;
+        }
+
+        /* Set up to read from read pipe from grandchild */
+        FD_ZERO(&rfds);
+        FD_SET(fdpipes[0], &rfds);
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+
+        /* Wait for data to be available on pipe */
+        retval = select (fdpipes[0]+1, &rfds, 0, 0, &tv);
+        if (0 > retval)
+        {
+            perror("recv_char=>select");
+            close(fdpipes[0]);
+            return -1;
+        }
+        if (!retval)
+        {
+            perror("recv_char=>select=>timeout");
+            close(fdpipes[0]);
+            return -1;
+        }
+
+        /* Read data from pipe */
+        if ((sizeof buf) != read(fdpipes[0],&buf,sizeof buf))
+        {
+            perror("recv_char=>read-pipe");
+            close(fdpipes[0]);
+            return -1;
+        }
+
+        if (buf.status)
+        {
+            close(fdpipes[0]);
+            errno = buf.m_errno;
+            perror("recv_char=>grandchild-init-failed");
+            return -1;
+        }
+        return fdpipes[0];
+    } /* End of grandparent (main) process in this routine */
+
+    /* To here, this is child-of grandparent, parent-of-grandchild
+     * - Its only task is to fork the grandchild process, then exit
+     * - This is done to ensure data reader is not a zombie process
+     */
+
+    /* Fork grandchild process to read the data sent by send_char */
+    if ((gcpid = fork()))
+    {
+        if (0 > gcpid)
+        {
+            perror("recv_chars=>fork-of-grandchild");
+            exit(-1);
+        }
+        /* Successful fork of grandchild; close read pipe and exit */
+        close(fdpipes[0]);
+        exit(0);
+    }
+
+    /* To here, this is grandchild process, with several tasks
+     * 1) Open TTY for read
+     * 2) Send initial success status to pipe
+     * 3) Read data from TTY
+     * 4) Send final success status to pipe
+     * 5) Exit
+     */
+
+    /* 1) Open TTY for read */
+    if (0 > (fdtty=open(tty_name,O_RDONLY | O_NONBLOCK)))
+    {
+        buf.status = fdtty;
+        buf.m_errno = errno;
+        write(fdpipes[1],&buf,sizeof buf);
+        perror("recv_chars=>open(tty)");
+        exit(-1);
+    }
+    if (!isatty(fdtty))
+    {
+        buf.status = -1;
+        buf.m_errno = errno;
+        write(fdpipes[1],&buf,sizeof buf);
+        close(fdtty);
+        exit(-1);
+    }
+    
+    /* 2) Send initial success status to pipe */
+    write(fdpipes[1],&buf,sizeof buf);
+
+    /* 3) Read data from TTY */
+    buf.count = count;
+
+    /* 4) Send final success status to pipe */
+    write(fdpipes[1],&buf,sizeof buf);
+
+    /* 5) Clean up and exit */
+    close(fdpipes[1]);
+    exit(0);
 }
 #endif/*__SST_H__*/
