@@ -150,7 +150,7 @@ main(int argc, char** argv)
     if (tty_name && send_count > 0)
     {
     SEQUENCE8BIT s8;   /* used by send_chars below (cf. stty.h) */
-    int fd_reader_pipe = 0;
+    int fdrdr = 0;
 
         /* Write test array data (see sst.h) to TTY (or file) */
         ssize_t sc;
@@ -167,10 +167,9 @@ main(int argc, char** argv)
         if (debug) { fprintf(stderr,"Opened [%s]; fd=%d\n", tty_name, fd); }
         if (0>fd) { perror(tty_name); }
 
-	/* Fork reader of these data */
-	fd_reader_pipe = fork_reader ? recv_chars(tty_name, send_count)
-		                     : 0;
-        if (0 > fd_reader_pipe) { return -1; }
+        /* Fork reader of these data, if requested (--fork-reader) */
+        fdrdr = fork_reader ? recv_chars(tty_name, send_count) : 0;
+        if (0 > fdrdr) { return -1; }
 
         /* Write test data */
         sc = send_chars(fd, send_count, &s8, &tries, &eagains);
@@ -180,6 +179,26 @@ main(int argc, char** argv)
                            "; tries=%lu; EAGAINs=%lu\n"
                           , (long)sc, tty_name, fd, tries, eagains
                           );
+        }
+
+        if (fork_reader)
+        {
+            RECVSTATUS buf;
+            if ((sizeof buf) != read(fdrdr,&buf,sizeof buf))
+            {
+                perror("Retrieving reader result from pipe"); 
+                close(fdrdr);
+                return -1;
+            }
+            close(fdrdr);
+
+            if (debug) {
+                fprintf(stderr,"Read %lu chars from [%s]; fd=%d"
+                               "; status=%d; errno=%d\n"
+                              , buf.count, tty_name, fdrdr
+                              , (int)buf.status, buf.m_errno
+                              );
+            }
         }
 
         close(fd);
