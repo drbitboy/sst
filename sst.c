@@ -194,8 +194,10 @@ main(int argc, char** argv)
 
             if (debug) {
                 fprintf(stderr,"Read %lu chars from [%s]; fd=%d"
+                               "; read-count=%lu"
                                "; status=%d; errno=%d\n"
                               , buf.count, tty_name, fdrdr
+                              , buf.reads
                               , (int)buf.status, buf.m_errno
                               );
             }

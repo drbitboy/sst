@@ -157,9 +157,10 @@ send_chars(int fd, size_t remaining, pSEQUENCE8BIT pseq8
 
 typedef struct RECVSTATUSstr
 {
-    char status;
+    int status;
     int m_errno;
     size_t count;
+    size_t reads;
 } RECVSTATUS, *pRECVSTATUS;
 
 /* Fork process to read loopback data sent by send_char(...) above */
@@ -216,16 +217,16 @@ recv_chars(char* tty_name, size_t count)
         tv.tv_usec = 0;
 
         /* Wait for data to be available on pipe */
-        retval = select (fdpipes[0]+1, &rfds, 0, 0, &tv);
+        retval = select(fdpipes[0]+1, &rfds, 0, 0, &tv);
         if (0 > retval)
         {
-            perror("recv_char=>select");
+            perror("recv_char=>select(pipe)");
             close(fdpipes[0]);
             return -1;
         }
         if (!retval)
         {
-            perror("recv_char=>select=>timeout");
+            perror("recv_char=>select(pipe)=>timeout");
             close(fdpipes[0]);
             return -1;
         }
@@ -296,13 +297,54 @@ recv_chars(char* tty_name, size_t count)
     write(fdpipes[1],&buf,sizeof buf);
 
     /* 3) Read data from TTY */
-    buf.count = count;
+    while (buf.count < count)
+    {
+        char databuf[1024];
+        int retval;
+        struct timeval tv;
+        fd_set rfds;
 
-    /* 4) Send final success status to pipe */
+        /* Setup for select with 3s timeout*/
+        tv.tv_sec = 3;
+        tv.tv_usec = 0;
+        FD_ZERO(&rfds);
+        FD_SET(fdtty, &rfds);
+
+        /* Setup for select */
+        if (0 > (retval = select(fdtty+1,&rfds,0,0,&tv)))
+        {
+            perror("recv_chars=>select(tty)");
+            buf.m_errno = errno;
+            buf.status = retval;
+            break;
+        }
+
+        /* Select timed out */
+        if (!retval)
+	{
+            perror("recv_chars=>select(tty)=>timeout");
+            break;
+        }
+
+        /* Read data */
+	++buf.reads;
+        if (0 > (retval = read(fdtty,databuf, 1024)))
+        {
+            perror("recv_chars=>read(tty)");
+            buf.m_errno = errno;
+            buf.status = retval;
+            break;
+        }
+        buf.count += retval;
+    }
+
+    /* 4) Send status to pipe */
     write(fdpipes[1],&buf,sizeof buf);
 
     /* 5) Clean up and exit */
+    close(fdtty);
     close(fdpipes[1]);
+
     exit(0);
 }
 #endif/*__SST_H__*/
