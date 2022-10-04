@@ -1,0 +1,72 @@
+-brkint
+-cmspar
+-echo
+-echoctl
+-echoe
+-echok
+-echoke
+-echonl
+-echoprt
+-extproc
+-flusho
+-hupcl
+-icanon
+-icrnl
+-iexten
+-ignbrk
+-igncr
+-ignpar
+-imaxbel
+-inlcr
+-isig
+-istrip
+-iuclc
+-iutf8
+-ixany
+-ixoff
+-ixon
+-noflsh
+-ocrnl
+-ofdel
+-ofill
+-olcuc
+-onlcr
+-onlret
+-onocr
+-opost
+-parmrk
+-parodd
+-tostop
+-xcase
+bs0
+clocal
+cr0
+cread
+crtscts
+cs8
+cstopb
+discard = <undef>;
+eof = <undef>;
+eol = <undef>;
+eol2 = <undef>;
+erase = <undef>;
+ff0
+inpck
+intr = <undef>;
+kill = <undef>;
+line = 0;
+lnext = <undef>;
+min = 1; time = 0;
+nl0
+parenb
+quit = <undef>;
+rows 0; columns 0;
+rprnt = <undef>;
+speed 9600 baud;
+start = <undef>;
+stop = <undef>;
+susp = <undef>;
+swtch = <undef>;
+tab0
+vt0
+werase = <undef>;
