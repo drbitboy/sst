@@ -21,6 +21,7 @@ main(int argc, char** argv)
     size_t tries;
     size_t eagains;
     int fork_reader = 0;
+    char* pbaudrate = NULL;
 
     /* Handle input arguments */
     for (iarg=1; iarg<argc; ++iarg)
@@ -88,6 +89,16 @@ main(int argc, char** argv)
             send_count = ct;
         }
 
+        /* Set speed/baudrate
+         * --speed=12.5M
+         */
+        else if (!strncmp(arg,"--speed=", 8)
+                || !strncmp(arg,"--baud=", 7)
+                )
+        {
+            pbaudrate = arg + (arg[2]=='s' ? 8 : 7);
+        }
+
         /* Debugging (logging) for this routine
          * --debug
          */
@@ -144,6 +155,15 @@ main(int argc, char** argv)
         if (!stty_raw_config(tty_name, (char*)NULL) && debug)
         {
             fprintf(stderr, "SUCCESS:  raw config of [%s]\n", tty_name);
+        }
+    };
+
+    if (tty_name && pbaudrate)
+    {
+        /* Configure TTY for baudrate (--speed=... or --baud=...) */
+        if (!stty_set_speed(tty_name, pbaudrate) && debug)
+        {
+            fprintf(stderr, "SUCCESS:  speed config of [%s]\n", tty_name);
         }
     };
 

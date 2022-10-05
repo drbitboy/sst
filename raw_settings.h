@@ -140,6 +140,24 @@ find_name_in_mode(char* token)
     return NULL;
 }
 
+/* Find element in static struct speed_map array that matches token,
+ * where token may have a '-' prefix for inverted flags
+ */
+static struct speed_map*
+find_name_in_speeds(char* token)
+{
+    struct speed_map* prtn;
+    if (!token) { return NULL; }
+    if ('-'==*token) { ++token; }
+    if (!*token) { return NULL; }
+    for (prtn = (struct speed_map*) speeds; prtn->string; )
+    {
+        if (!strcmp(token,prtn->string)) { return prtn; }
+        ++prtn;
+    }
+    return NULL;
+}
+
 /* Return pointer to corresponding flag in struct termios,
  * based on matching .type element of [struct mode_info] instance
  */
@@ -274,16 +292,18 @@ stty_raw_config(char* tty_name, char* alt_settings)
         }
 
         /* Get initial struct termios data */
-        if (tty_name && tcgetattr(fd, &save_termios))
+        if (tty_name && ioctl(fd, TCGETS, &save_termios))
+        /*if (tty_name && tcgetattr(fd, &save_termios))*/
         {
             fprintf(stderr, "ERROR:  getting device attributes; ");
             perror(tty_name);
+            close(fd);
             errno = 0;
             return -2;
         }
     }
 
-    /* Copy initial struct termios data to raw struct */
+    /* Copy initial struct termios data to new struct */
     memcpy(&new_termios, &save_termios, sizeof save_termios);
 
     /* Parse settings 1 char at a time, until null terminator */
@@ -338,7 +358,8 @@ stty_raw_config(char* tty_name, char* alt_settings)
         /* If any difference was found, configure new attibutes */
         if (ptrsave < ptrsave_end)
         {
-            if (0 > tcsetattr(fd, TCSAFLUSH, &new_termios))
+            if (0 > ioctl(fd, TCSETSF, &new_termios))
+            /*if (0 > tcsetattr(fd, TCSAFLUSH, &new_termios))*/
             {
                 fprintf(stderr, "ERROR:  setting device attributes; ");
                 perror(tty_name);
@@ -349,6 +370,144 @@ stty_raw_config(char* tty_name, char* alt_settings)
         }
         close(fd);
     }
+
+    return 0;
+}
+
+/* Configure serial port (/dev/tty*) for raw data transmission */
+static int
+stty_set_speed(char* tty_name, char* speed_token)
+{
+    /* The struct termios' of the TTY */
+    struct termios save_termios;       /* On entry to this routine */
+    struct termios new_termios;        /* After applying raw_settings */
+#   ifdef BOTHER
+    struct termios2 save_termios2;     /* On entry to this routine */
+    struct termios2 new_termios2;      /* After applying raw_settings */
+#   endif/*BOTHER*/
+
+    int fd;   /* File descriptor of opened TTY */
+
+    struct speed_map* pspeed;
+    int not_bother = 1;
+
+    if (!tty_name) { return -1; }
+    if (!*tty_name) { return -1; }
+    if (!speed_token) { return -1; }
+    if (!*speed_token) { return -1; }
+
+    if (!(pspeed = find_name_in_speeds(speed_token))) { return -1; }
+
+#   ifdef BOTHER
+    not_bother = (BOTHER != pspeed->speed);
+#   endif/*BOTHER*/
+
+    /* Open the TTY */
+    fd = open(tty_name, O_RDONLY | O_NONBLOCK);
+
+    if (raw_settings_debug) {
+        fprintf(stderr, "stty_set_speed[%sBOTHER]"
+                        ":  tty_name=[%s]; fd=%d"
+                        "; speed=%s(%ldbaud)\n"
+                      , not_bother ? "not-" : ""
+                      , tty_name, fd
+                      , pspeed->string, pspeed->value
+                      );
+    }
+
+    /* Error handling */
+    if (fd < 0)
+    {
+        fprintf(stderr, "ERROR:  opening device; ");
+        perror(tty_name);
+        errno = 0;
+        return -1;
+    }
+
+    /* Ensure [struct termios<2>] states are initially known */
+    if (not_bother)
+    {
+        memset(&save_termios, 0, sizeof save_termios);
+
+        /* Get initial struct termios data */
+        if (ioctl(fd, TCGETS, &save_termios))
+        /*if (tcgetattr(fd, &save_termios))*/
+        {
+            fprintf(stderr, "ERROR:  getting termios attributes; ");
+            perror(tty_name);
+            close(fd);
+            errno = 0;
+            return -2;
+        }
+
+        /* Copy initial struct termios data to new struct */
+        memcpy(&new_termios, &save_termios, sizeof save_termios);
+
+        /* Update baudrate bits in new termios struct */
+        new_termios.c_cflag &= ~CBAUD;
+        new_termios.c_cflag |= pspeed->speed;
+
+        /* Write new termios struct to device */
+        if (0 > ioctl(fd, TCSETSF, &new_termios))
+        /*if (0 > tcsetattr(fd, TCSAFLUSH, &new_termios))*/
+        {
+            fprintf(stderr, "ERROR:  setting device attributes; ");
+            perror(tty_name);
+            close(fd);
+            errno = 0;
+            return -3;
+        }
+
+        if (raw_settings_debug) {
+            fprintf(stderr, "stty_set_speed[not-BOTHER] success"
+                            ": speed=%s(%ldbaud)\n"
+                          , pspeed->string, pspeed->value);
+        }
+    }
+#   ifdef BOTHER
+    else
+    {
+        memset(&save_termios2, 0, sizeof save_termios2);
+
+        /* Get initial struct termios data */
+        if (ioctl(fd, TCGETS2, &save_termios2))
+        {
+            fprintf(stderr, "ERROR:  getting termios2 attributes; ");
+            perror(tty_name);
+            close(fd);
+            errno = 0;
+            return -2;
+        }
+
+        /* Copy initial struct termios data to new struct */
+        memcpy(&new_termios2, &save_termios2, sizeof save_termios2);
+
+        /* Update baudrate bits in new termios struct */
+        new_termios2.c_cflag &= ~CBAUD;
+        new_termios2.c_cflag |= BOTHER;
+
+        /* Update baudrates in new termios struct */
+        new_termios2.c_ispeed = new_termios2.c_ospeed = pspeed->value;
+
+        /* Write new termios struct to device */
+        if (0 > ioctl(fd, TCSETS2, &new_termios))
+        {
+            fprintf(stderr, "ERROR:  setting termios2 attributes; ");
+            perror(tty_name);
+            close(fd);
+            errno = 0;
+            return -3;
+        }
+
+        if (raw_settings_debug) {
+            fprintf(stderr, "stty_set_speed[BOTHER]"
+                            ": speed=%s(%ldbaud)\n"
+                          , pspeed->string, pspeed->value);
+        }
+    }
+#   endif/*BOTHER*/
+
+    close(fd);
 
     return 0;
 }

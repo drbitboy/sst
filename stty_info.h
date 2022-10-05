@@ -2,7 +2,14 @@
 #define __STTY_INFO_H__
 
 #include <stddef.h>
+#include <asm/termbits.h>
+
+#if 0
 #include <termios.h>
+#ifndef BOTHER
+#define BOTHER 0100000
+#endif/*BOTHER*/
+#endif/*0*/
 
 /* mode_info and control_info */
 
