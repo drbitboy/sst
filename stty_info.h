@@ -308,6 +308,14 @@ static struct speed_map const speeds[] =
   {"4000000", B4000000, 4000000},
   {"4M", B4000000, 4000000},
 #endif
+#ifdef BOTHER
+  {"8000000", BOTHER, 8000000},
+  {"8M", BOTHER, 8000000},
+  {"12000000", BOTHER, 12000000},
+  {"12M", BOTHER, 12000000},
+  {"12500000", BOTHER, 12500000},
+  {"12.5M", BOTHER, 12500000},
+#endif
   {NULL, 0, 0}
 };
 
