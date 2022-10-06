@@ -115,6 +115,14 @@ main(int argc, char** argv)
             raw_settings_debug = -1;
         }
 
+        /* Debugging (logging) for raw_settings.h speed values
+         * --raw-config-debug-speed
+         */
+        else if (!strcmp(arg,"--raw-config-debug-speed"))
+        {
+            raw_settings_debug_speed = -1;
+        }
+
         /* Configure the tty to pass raw data
          * --do-raw-config
          * N.B. Default is to not do raw configuration

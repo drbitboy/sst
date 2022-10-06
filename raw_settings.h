@@ -19,6 +19,7 @@
 #include "stty_info.h"
 
 static int raw_settings_debug = 0;
+static int raw_settings_debug_speed = 0;
 
 /***********************************************************************
  *** Raw serial line (/dev/tty*) settings from stty:                 ***
@@ -275,7 +276,8 @@ stty_raw_config(char* tty_name, char* alt_settings)
     /* Ensure [struct termios] state is initially known */
     memset(&save_termios, 0, sizeof save_termios);
 
-    if (raw_settings_debug) {
+    if (raw_settings_debug)
+    {
         fprintf(stderr, "stty_raw_config:  tty_name=[%s]; fd=%d\n"
                       , tty_name?tty_name: "<null>", fd);
     }
@@ -405,7 +407,8 @@ stty_set_speed(char* tty_name, char* speed_token)
     /* Open the TTY */
     fd = open(tty_name, O_RDONLY | O_NONBLOCK);
 
-    if (raw_settings_debug) {
+    if (raw_settings_debug)
+    {
         fprintf(stderr, "stty_set_speed[%sBOTHER]"
                         ":  tty_name=[%s]; fd=%d"
                         "; speed=%s(%ldbaud)\n"
@@ -458,7 +461,8 @@ stty_set_speed(char* tty_name, char* speed_token)
             return -3;
         }
 
-        if (raw_settings_debug) {
+        if (raw_settings_debug)
+        {
             fprintf(stderr, "stty_set_speed[not-BOTHER] success"
                             ": speed=%s(%ldbaud)\n"
                           , pspeed->string, pspeed->value);
@@ -477,6 +481,18 @@ stty_set_speed(char* tty_name, char* speed_token)
             close(fd);
             errno = 0;
             return -2;
+        }
+
+        if (raw_settings_debug_speed)
+        {
+            fprintf(stderr, "stty_set_speed[BOTHER]"
+                            ":  save_termios2.c_cflag&CBAUD=0o%o"
+                            "; save_termios2.c_ispeed=%u"
+                            "; save_termios2.c_ospeed=%u\n"
+                          , save_termios2.c_cflag & CBAUD
+                          , save_termios2.c_ispeed
+                          , save_termios2.c_ospeed
+                          );
         }
 
         /* Copy initial struct termios data to new struct */
@@ -499,7 +515,8 @@ stty_set_speed(char* tty_name, char* speed_token)
             return -3;
         }
 
-        if (raw_settings_debug) {
+        if (raw_settings_debug)
+        {
             fprintf(stderr, "stty_set_speed[BOTHER]"
                             ": speed=%s(%ldbaud)\n"
                           , pspeed->string, pspeed->value);
