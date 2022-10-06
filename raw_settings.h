@@ -485,10 +485,10 @@ stty_set_speed(char* tty_name, char* speed_token)
 
         if (raw_settings_debug_speed)
         {
-            fprintf(stderr, "stty_set_speed[BOTHER]"
-                            ":  save_termios2.c_cflag&CBAUD=0o%o"
-                            "; save_termios2.c_ispeed=%u"
-                            "; save_termios2.c_ospeed=%u\n"
+            fprintf(stderr, "stty_set_speed[BOTHER], save_termios2"
+                            ":  .c_cflag&CBAUD=0o%06o"
+                            "; .c_ispeed=%u"
+                            "; .c_ospeed=%u\n"
                           , save_termios2.c_cflag & CBAUD
                           , save_termios2.c_ispeed
                           , save_termios2.c_ospeed
