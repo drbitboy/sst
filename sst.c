@@ -15,7 +15,7 @@ main(int argc, char** argv)
     char* arg;
     char* tty_name = NULL;
     int do_raw_config = 0;
-    size_t send_count;
+    size_t send_count = 0;
     int debug = 0;
     int o_nonblock = 0;
     size_t tries;

@@ -261,7 +261,7 @@ static int
 stty_raw_config(char* tty_name, char* alt_settings)
 {
     /* The struct termios' of the TTY */
-    struct termios save_termios;       /* On entry to this routine */
+    struct termios old_termios;       /* On entry to this routine */
     struct termios new_termios;        /* After applying raw_settings */
 
     /* Data to parse raw_settings string, one "line: at a time */
@@ -274,7 +274,7 @@ stty_raw_config(char* tty_name, char* alt_settings)
     int fd = tty_name ? open(tty_name, O_RDONLY | O_NONBLOCK) : -1;
 
     /* Ensure [struct termios] state is initially known */
-    memset(&save_termios, 0, sizeof save_termios);
+    memset(&old_termios, 0, sizeof old_termios);
 
     if (raw_settings_debug)
     {
@@ -294,8 +294,8 @@ stty_raw_config(char* tty_name, char* alt_settings)
         }
 
         /* Get initial struct termios data */
-        if (tty_name && ioctl(fd, TCGETS, &save_termios))
-        /*if (tty_name && tcgetattr(fd, &save_termios))*/
+        if (tty_name && ioctl(fd, TCGETS, &old_termios))
+        /*if (tty_name && tcgetattr(fd, &old_termios))*/
         {
             fprintf(stderr, "ERROR:  getting device attributes; ");
             perror(tty_name);
@@ -306,7 +306,7 @@ stty_raw_config(char* tty_name, char* alt_settings)
     }
 
     /* Copy initial struct termios data to new struct */
-    memcpy(&new_termios, &save_termios, sizeof save_termios);
+    memcpy(&new_termios, &old_termios, sizeof old_termios);
 
     /* Parse settings 1 char at a time, until null terminator */
     while (*parser) {
@@ -346,19 +346,19 @@ stty_raw_config(char* tty_name, char* alt_settings)
 
     if (tty_name && fd > -1)
     {
-        /* Compare saved and possibly updated struct termios' */
-        char* ptrsave = (char*) &save_termios;
-        char* ptrsave_end = (char*) ((&save_termios)+1);
+        /* Compare old and possibly updated struct termios' */
+        char* ptrold = (char*) &old_termios;
+        char* ptrold_end = (char*) ((&old_termios)+1);
         char* ptrnew = (char*) &new_termios;
-        while (ptrsave < ptrsave_end)
+        while (ptrold < ptrold_end)
         {
-            if (*ptrsave != *ptrnew) { break; }
-            ++ptrsave;
+            if (*ptrold != *ptrnew) { break; }
+            ++ptrold;
             ++ptrnew;
         }
 
         /* If any difference was found, configure new attibutes */
-        if (ptrsave < ptrsave_end)
+        if (ptrold < ptrold_end)
         {
             if (0 > ioctl(fd, TCSETSF, &new_termios))
             /*if (0 > tcsetattr(fd, TCSAFLUSH, &new_termios))*/
@@ -381,10 +381,10 @@ static int
 stty_set_speed(char* tty_name, char* speed_token)
 {
     /* The struct termios' of the TTY */
-    struct termios save_termios;       /* On entry to this routine */
+    struct termios old_termios;       /* On entry to this routine */
     struct termios new_termios;        /* After applying raw_settings */
 #   ifdef BOTHER
-    struct termios2 save_termios2;     /* On entry to this routine */
+    struct termios2 old_termios2;     /* On entry to this routine */
     struct termios2 new_termios2;      /* After applying raw_settings */
 #   endif/*BOTHER*/
 
@@ -430,11 +430,11 @@ stty_set_speed(char* tty_name, char* speed_token)
     /* Ensure [struct termios<2>] states are initially known */
     if (not_bother)
     {
-        memset(&save_termios, 0, sizeof save_termios);
+        memset(&old_termios, 0, sizeof old_termios);
 
         /* Get initial struct termios data */
-        if (ioctl(fd, TCGETS, &save_termios))
-        /*if (tcgetattr(fd, &save_termios))*/
+        if (ioctl(fd, TCGETS, &old_termios))
+        /*if (tcgetattr(fd, &old_termios))*/
         {
             fprintf(stderr, "ERROR:  getting termios attributes; ");
             perror(tty_name);
@@ -444,7 +444,7 @@ stty_set_speed(char* tty_name, char* speed_token)
         }
 
         /* Copy initial struct termios data to new struct */
-        memcpy(&new_termios, &save_termios, sizeof save_termios);
+        memcpy(&new_termios, &old_termios, sizeof old_termios);
 
         /* Update baudrate bits in new termios struct */
         new_termios.c_cflag &= ~CBAUD;
@@ -471,10 +471,10 @@ stty_set_speed(char* tty_name, char* speed_token)
 #   ifdef BOTHER
     else
     {
-        memset(&save_termios2, 0, sizeof save_termios2);
+        memset(&old_termios2, 0, sizeof old_termios2);
 
         /* Get initial struct termios data */
-        if (ioctl(fd, TCGETS2, &save_termios2))
+        if (ioctl(fd, TCGETS2, &old_termios2))
         {
             fprintf(stderr, "ERROR:  getting termios2 attributes; ");
             perror(tty_name);
@@ -485,18 +485,18 @@ stty_set_speed(char* tty_name, char* speed_token)
 
         if (raw_settings_debug_speed)
         {
-            fprintf(stderr, "stty_set_speed[BOTHER], save_termios2"
+            fprintf(stderr, "stty_set_speed[BOTHER], old_termios2"
                             ":  .c_cflag&CBAUD=0o%06o"
                             "; .c_ispeed=%u"
                             "; .c_ospeed=%u\n"
-                          , save_termios2.c_cflag & CBAUD
-                          , save_termios2.c_ispeed
-                          , save_termios2.c_ospeed
+                          , old_termios2.c_cflag & CBAUD
+                          , old_termios2.c_ispeed
+                          , old_termios2.c_ospeed
                           );
         }
 
         /* Copy initial struct termios data to new struct */
-        memcpy(&new_termios2, &save_termios2, sizeof save_termios2);
+        memcpy(&new_termios2, &old_termios2, sizeof old_termios2);
 
         /* Update baudrate bits in new termios struct */
         new_termios2.c_cflag &= ~CBAUD;
@@ -505,14 +505,48 @@ stty_set_speed(char* tty_name, char* speed_token)
         /* Update baudrates in new termios struct */
         new_termios2.c_ispeed = new_termios2.c_ospeed = pspeed->value;
 
+        if (raw_settings_debug_speed)
+        {
+            fprintf(stderr, "stty_set_speed[BOTHER], new_termios2"
+                            ":  .c_cflag&CBAUD=0o%06o"
+                            "; .c_ispeed=%u"
+                            "; .c_ospeed=%u\n"
+                          , new_termios2.c_cflag & CBAUD
+                          , new_termios2.c_ispeed
+                          , new_termios2.c_ospeed
+                          );
+        }
+
         /* Write new termios struct to device */
-        if (0 > ioctl(fd, TCSETS2, &new_termios))
+        if (0 > ioctl(fd, TCSETSF2, &new_termios2))
         {
             fprintf(stderr, "ERROR:  setting termios2 attributes; ");
             perror(tty_name);
             close(fd);
             errno = 0;
             return -3;
+        }
+
+        if (raw_settings_debug_speed)
+        {
+            struct termios2 chk_termios2;
+            memset(&old_termios2, 0, sizeof chk_termios2);
+            if (ioctl(fd, TCGETS2, &chk_termios2))
+            {
+                fprintf(stderr, "ERROR:  checking termios2 attribs; ");
+                perror(tty_name);
+                close(fd);
+                errno = 0;
+                return -2;
+            }
+            fprintf(stderr, "stty_set_speed[BOTHER], chk_termios2"
+                            ":  .c_cflag&CBAUD=0o%06o"
+                            "; .c_ispeed=%u"
+                            "; .c_ospeed=%u\n"
+                          , chk_termios2.c_cflag & CBAUD
+                          , chk_termios2.c_ispeed
+                          , chk_termios2.c_ospeed
+                          );
         }
 
         if (raw_settings_debug)
