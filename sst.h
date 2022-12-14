@@ -173,6 +173,7 @@ recv_chars(char* tty_name, size_t count)
     pid_t gcpid;     /* Grandchild PID */
     pid_t ppid;      /* Parent (child of grandparent) PID */
     RECVSTATUS buf;
+    int timeouts_remaining = 4;
 
     memset(&buf, 0, sizeof buf);
 
@@ -323,7 +324,8 @@ recv_chars(char* tty_name, size_t count)
         if (!retval)
 	{
             perror("recv_chars=>select(tty)=>timeout");
-            break;
+            if (--timeouts_remaining < 1) { break; }
+            continue;
         }
 
         /* Read data */
