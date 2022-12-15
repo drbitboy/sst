@@ -103,7 +103,7 @@ send_chars(int fd, size_t remaining, pSEQUENCE8BIT pseq8
     size_t count_this_pass;
     ssize_t iwrite;
 
-       ++*ptries;
+        ++*ptries;
 
         /* When start of chars to send is too early or late,
          * reset to send last three chars (NUL, CR, NL)
@@ -322,14 +322,14 @@ recv_chars(char* tty_name, size_t count)
 
         /* Select timed out */
         if (!retval)
-	{
+        {
             perror("recv_chars=>select(tty)=>timeout");
             if (--timeouts_remaining < 1) { break; }
             continue;
         }
 
         /* Read data */
-	++buf.reads;
+        ++buf.reads;
         if (0 > (retval = read(fdtty,databuf, 1024)))
         {
             perror("recv_chars=>read(tty)");

@@ -407,11 +407,11 @@ stty_set_speed(char* tty_name, char* speed_token)
     /* Open the TTY */
     fd = open(tty_name, O_RDONLY | O_NONBLOCK);
 
-    if (raw_settings_debug)
+    if (raw_settings_debug || raw_settings_debug_speed)
     {
         fprintf(stderr, "stty_set_speed[%sBOTHER]"
                         ":  tty_name=[%s]; fd=%d"
-                        "; speed=%s(%ldbaud)\n"
+                        "; target-speed=%s(%ldbaud)\n"
                       , not_bother ? "not-" : ""
                       , tty_name, fd
                       , pspeed->string, pspeed->value
@@ -461,7 +461,7 @@ stty_set_speed(char* tty_name, char* speed_token)
             return -3;
         }
 
-        if (raw_settings_debug)
+        if (raw_settings_debug || raw_settings_debug_speed)
         {
             fprintf(stderr, "stty_set_speed[not-BOTHER] success"
                             ": speed=%s(%ldbaud)\n"
@@ -483,7 +483,7 @@ stty_set_speed(char* tty_name, char* speed_token)
             return -2;
         }
 
-        if (raw_settings_debug_speed)
+        if (raw_settings_debug || raw_settings_debug_speed)
         {
             fprintf(stderr, "stty_set_speed[BOTHER], old_termios2"
                             ":  .c_cflag&CBAUD=0o%06o"
@@ -505,7 +505,7 @@ stty_set_speed(char* tty_name, char* speed_token)
         /* Update baudrates in new termios struct */
         new_termios2.c_ispeed = new_termios2.c_ospeed = pspeed->value;
 
-        if (raw_settings_debug_speed)
+        if (raw_settings_debug || raw_settings_debug_speed)
         {
             fprintf(stderr, "stty_set_speed[BOTHER], new_termios2"
                             ":  .c_cflag&CBAUD=0o%06o"
@@ -527,7 +527,7 @@ stty_set_speed(char* tty_name, char* speed_token)
             return -3;
         }
 
-        if (raw_settings_debug_speed)
+        if (raw_settings_debug || raw_settings_debug_speed)
         {
             struct termios2 chk_termios2;
             memset(&old_termios2, 0, sizeof chk_termios2);
@@ -549,7 +549,7 @@ stty_set_speed(char* tty_name, char* speed_token)
                           );
         }
 
-        if (raw_settings_debug)
+        if (raw_settings_debug || raw_settings_debug_speed)
         {
             fprintf(stderr, "stty_set_speed[BOTHER]"
                             ": speed=%s(%ldbaud)\n"

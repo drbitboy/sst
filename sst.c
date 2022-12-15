@@ -199,6 +199,10 @@ main(int argc, char** argv)
         fdrdr = fork_reader ? recv_chars(tty_name, send_count) : 0;
         if (0 > fdrdr) { return -1; }
 
+        if (fork_reader && debug) {
+            fprintf(stderr,"Forked reader; pipe-fd=%d\n", fdrdr);
+        }
+
         /* Write test data */
         sc = send_chars(fd, send_count, &s8, &tries, &eagains);
 
