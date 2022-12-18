@@ -193,7 +193,10 @@ main(int argc, char** argv)
             fd = open(tty_name, O_WRONLY  | o_nonblock | O_CREAT);
         }
         if (debug) { fprintf(stderr,"Opened [%s]; fd=%d\n", tty_name, fd); }
-        if (0>fd) { perror(tty_name); }
+        if (0>fd) { perror(tty_name); return -1; }
+
+        /* Close tty fd so it is not inherited by forked processes */
+        if (0>close(fd)) { perror(tty_name); return -1; }
 
         /* Fork reader of these data, if requested (--fork-reader) */
         fdrdr = fork_reader ? recv_chars(tty_name, send_count) : 0;
@@ -202,6 +205,14 @@ main(int argc, char** argv)
         if (fork_reader && debug) {
             fprintf(stderr,"Forked reader; pipe-fd=%d\n", fdrdr);
         }
+
+        /* Re-open tty for write */
+        if (0 > (fd=open(tty_name, O_WRONLY | o_nonblock)))
+        {
+            perror(tty_name);
+            return -1;
+        }
+        if (debug) { fprintf(stderr,"Re-opened [%s]; fd=%d\n", tty_name, fd); }
 
         /* Write test data */
         sc = send_chars(fd, send_count, &s8, &tries, &eagains);
@@ -216,6 +227,9 @@ main(int argc, char** argv)
         if (fork_reader)
         {
             RECVSTATUS buf;
+            fprintf(stderr,"Waiting for forked reader to"
+                           " finish and send data to pipe...\n"
+                   );
             if ((sizeof buf) != read(fdrdr,&buf,sizeof buf))
             {
                 perror("Retrieving reader result from pipe"); 
