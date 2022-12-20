@@ -6,6 +6,20 @@
 /*** 8-bit characters to a TTY (or other file)                      ***/
 /**********************************************************************/
 
+/* Contents
+ * ========
+ * fill_to_send()              - fill source data array, return pointer
+ * dump_to_send(...)           - Dump source data array to output stream
+ * typedef ... *pSEQUENCE8BIT  - Struct to use source data array
+ * send_chars(...)             - Automate large writy of source data
+ * typedef ... *pRECVSTATUS    - Struct with forked reader status
+ * recv_chars(...)             - Read data from TTY
+ * tohere(...)                 - High-frequency debug logging
+ * - #ifdef DOTOHERE           - Control compile-time usage of tohere()
+ * - #define TOHEREI(I)        - Control compile-time usage of tohere()
+ * - #define TOHERE(I)         - Control compile-time usage of tohere()
+ */
+
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -33,6 +47,8 @@
 static char to_send[LSEND];    /* Array of characters */
 static char* p_to_send_end;    /* Pointer to one past last character */
 
+
+/**********************************************************************/
 /* Routine to fill array and initialize p_to_send_end pointer */
 static void
 fill_to_send()
@@ -52,12 +68,18 @@ fill_to_send()
     p_to_send_end = (char*) p;
 }
 
+
+/**********************************************************************/
 /* Dump entire array */
-static void dump_to_send(FILE* fout) {
+static void
+dump_to_send(FILE* fout)
+{
    fill_to_send();
    fwrite(to_send, 1, LSEND, fout);
 }
 
+
+/**********************************************************************/
 /* Structure to keep track of sequence of array subsets */
 typedef struct sequence8bitstr
 {
@@ -67,7 +89,15 @@ typedef struct sequence8bitstr
     char last;
 } SEQUENCE8BIT, *pSEQUENCE8BIT;
 
+
+/**********************************************************************/
 #ifdef DOTOHERE
+/* High-frequency debug logging (e.g. gcc -DDOTOHERE)
+ * - These routines cause system crashes and reboots in NVIDIA Jetson
+ *   platforms, so this tohere(...) routine is a compile-time-enabled
+ *   way to know, approximately, what is the last line of code that
+ *   executes before a crash occurs
+ */
 void tohere(const char* fyle, const char* func, const int lyne, const int val)
 {
     fprintf(stderr,"TOHERE:  file=[%s]; function=[%s]; line=%d; val=%d\n"
@@ -75,12 +105,33 @@ void tohere(const char* fyle, const char* func, const int lyne, const int val)
            );
     fflush(stderr);
 }
+
+/* The macro TOHEREI(I) is a standard way to control the calling of
+ * tohere(...)
+ * - There will be another macro, TOHERE(I) that will be used where
+ *   this high-freequency debug logging is desired.
+ *   - Macro TOHERE(I) will
+ *     - either be #defined empty to disable the logging,
+ *     - or be #defined equivalent to TOHEREI(I) to enable the logging
+ * - The parameter I is an integer that is used when there is a need to
+ *   log more information than the file, function, and line number
+ *   - The parameter I will normally be 0
+ */
 #define TOHEREI(I) tohere(__FILE__,__FUNCTION__,__LINE__,(int)(I));
+
 #else
+/* If the macro DOTOHERE is not #defined, then the TOHEREI(I) macro is
+ * empty, which disables any calls to the non-existent tohere(...)
+ * routine, regardless how TOHERE(I) is #defined elsewhere
+ */
 #define TOHEREI(I)
 #endif
+
+/* Initialize no debug logging */
 #define TOHERE(I)
 
+
+/**********************************************************************/
 /* Routine to send sequence of array subsets to open file descriptor
  *
  * Return value:  how many characters were sent:  sum of write()'s
@@ -191,8 +242,11 @@ TOHERE(0)
     }
 TOHERE(0)
     return lsent;
-}
+} /* send_chars(...) */
 
+
+/**********************************************************************/
+/* Struct to return status from forked reader (cf. recv_char(...)) */
 typedef struct RECVSTATUSstr
 {
     int status;
@@ -204,6 +258,8 @@ typedef struct RECVSTATUSstr
 #undef TOHERE
 #define TOHERE(I)
 
+
+/**********************************************************************/
 /* Fork process to read loopback data sent by send_char(...) above */
 /* Return value:  -1 or file descriptor of read pipe from data reader */
 static int
@@ -388,7 +444,7 @@ TOHERE(0)
 TOHERE(0)
         exit(-1);
     }
-    
+
     /* 2) Send initial success status to pipe */
 TOHERE(0)
     write(fdpipes[1],&buf,sizeof buf);
@@ -477,5 +533,6 @@ TOHERE(0)
 
 TOHERE(0)
     exit(0*iwrite);
-}
+} /* static int recv_chars(char* tty_name, size_t count) */
+
 #endif/*__SST_H__*/

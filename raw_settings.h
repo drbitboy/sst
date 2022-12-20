@@ -2,9 +2,23 @@
 #define __RAW_SETTINGS_H__
 
 /**********************************************************************/
-/*** Routines to configure serial line (/dev/tty*) for raw data     ***/
-/*** transmission using tcsetattr(3)                                ***/
+/*** Data, structs, and Routines to configure serial line           ***/
+/*** (/dev/tty*) for raw data transmission using tcsetattr(3)       ***/
 /**********************************************************************/
+
+/* Contents
+ * ========
+ * #include "stty_info.h"    - Parameterize members of struct termios
+ * raw_settings[]            - Raw data configuration settings from stty
+ * dump_raw_settings(...)    - Dump content of raw_settings
+ * find_name_in_control(...) - Find entry in control data in stty_info.h
+ * find_name_in_mode(...)    - Find entry in mode data in stty_info.h
+ * find_name_in_speeds(...)  - Find entry in speed data in stty_info.h
+ * mode_tcflag_pointer(...)  - Return pointer to flag in struct termios
+ * stty_process_token(...)   - Process one line of raw_settings[] above
+ * stty_raw_config(...)      - Configure serial port for raw data
+ * stty_set_speed(...)       - Configure serial port baudrate
+ */
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -15,7 +29,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
-/* mode_info, control_info, etc */
+/* mode_info, control_info, etc. */
 #include "stty_info.h"
 
 static int raw_settings_debug = 0;
@@ -26,7 +40,8 @@ static int raw_settings_debug_speed = 0;
  *** - COLUMNS=1 stty -F /dev/ttyUSB0 -a | LC_ALL=C sort             ***
  *** - Empirically determined using [stty] from coreutils            ***
  **********************************************************************/
-static char const raw_settings[] = { "\
+static char const raw_settings[] =
+{ "\
 -brkint\n\
 -cmspar\n\
 -echo\n\
@@ -103,7 +118,10 @@ werase = <undef>;\n\
 
 /* Output the string above to a stream */
 static void
-dump_raw_settings(FILE* f) { if (f) { fprintf(f,"%s", raw_settings); } }
+dump_raw_settings(FILE* f)
+{
+    if (f) { fprintf(f,"%s", raw_settings); }
+}
 
 /* Find element in static struct control_info array that matches token,
  * where token may have a '-' prefix for inverted flags

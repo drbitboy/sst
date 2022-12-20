@@ -1,5 +1,12 @@
-/* Program to write some number or characters as raw stream to
- * tty file
+/* sst.c - Serial Streass Test
+ *
+ * Write some number of characters as raw stream to tty file
+ *
+ * This program comprises four steps:
+ * - Parse command-line arguments;
+ * - Configure TTY for raw data;
+ * - Configure TTY speed;
+ * - Write test array data.
  */
 #include <errno.h>
 #include <stdlib.h>
@@ -23,14 +30,15 @@ main(int argc, char** argv)
     int fork_reader = 0;
     char* pbaudrate = NULL;
 
-    /* Handle input arguments */
+    /******************************************************************/
+    /* Parse command-line arguments */
     for (iarg=1; iarg<argc; ++iarg)
     {
         arg = argv[iarg];
 
         /* Dump raw settings string from raw_settings.h
-         * --dump-raw-settings          -> write to STDOUT
-         * --dump-raw-settings=xyz.txt  -> write to file
+         * --dump-raw-settings           -> write to STDOUT
+         * --dump-raw-settings=raws.txt  -> write to file
          */
         if (!strcmp(arg,"--dump-raw-settings")
            || !strncmp(arg,"--dump-raw-settings=", 20)
@@ -76,21 +84,22 @@ main(int argc, char** argv)
         }
 
         /* How many characters to send
-         * --send-count=921600
+         * --send-count=12500000
          */
         else if (!strncmp(arg,"--send-count=", 13))
         {
             unsigned long ct;
             if (1 != sscanf(arg+13,"%lu",&ct))
             {
-                fprintf(stderr,"ERROR:  bad count [%s]\n", arg);
+                fprintf(stderr,"ERROR:  bad send count [%s]\n", arg);
                 continue;
             }
             send_count = ct;
         }
 
-        /* Set speed/baudrate
+        /* Set TTY speed (baudrate)
          * --speed=12.5M
+         * --baud=12500000
          */
         else if (!strncmp(arg,"--speed=", 8)
                 || !strncmp(arg,"--baud=", 7)
@@ -99,7 +108,7 @@ main(int argc, char** argv)
             pbaudrate = arg + (arg[2]=='s' ? 8 : 7);
         }
 
-        /* Debugging (logging) for this routine
+        /* Debugging (logging)
          * --debug
          */
         else if (!strcmp(arg,"--debug"))
@@ -123,16 +132,16 @@ main(int argc, char** argv)
             raw_settings_debug_speed = -1;
         }
 
-        /* Configure the tty to pass raw data
+        /* Perform configuration of the tty to pass raw data
          * --do-raw-config
-         * N.B. Default is to not do raw configuration
+         * N.B. Default is to not perform raw configuration
          */
         else if (!strcmp(arg,"--do-raw-config"))
         {
             do_raw_config = 1;
         }
 
-        /* Open tty non-blocking
+        /* Open the tty non-blocking
          * --open-non-blocking
          * N.B. Default is to open for blocking
          */
@@ -141,7 +150,7 @@ main(int argc, char** argv)
             o_nonblock = O_NONBLOCK;
         }
 
-        /* Fork a reader for the data
+        /* Fork a reader of the data
          * --fork-reader
          * N.B. Default is to not fork a reader
          */
@@ -152,35 +161,42 @@ main(int argc, char** argv)
 
         else
         {
-           fprintf(stderr, "Unknown option:  [%s]\n", arg);
+           fprintf(stderr, "FAILED, Unknown option:  [%s]\n", arg);
            return 3;
         }
-    }
+    } /* for (iarg=1; iarg<argc; ++iarg) - Parse command-line */
 
+
+    /******************************************************************/
+    /* Configure TTY for raw data, if requested (--do-raw-config) */
     if (tty_name && do_raw_config)
     {
-        /* Configure TTY for raw data */
         if (!stty_raw_config(tty_name, (char*)NULL) && debug)
         {
             fprintf(stderr, "SUCCESS:  raw config of [%s]\n", tty_name);
         }
     };
 
+
+    /******************************************************************/
+    /* Configure TTY speed, if requested (--speed=... or --baud=...)
+     */
     if (tty_name && pbaudrate)
     {
-        /* Configure TTY for baudrate (--speed=... or --baud=...) */
         if (!stty_set_speed(tty_name, pbaudrate) && debug)
         {
             fprintf(stderr, "SUCCESS:  speed config of [%s]\n", tty_name);
         }
     };
 
+
+    /******************************************************************/
+    /* Write test array data (see sst.h) to TTY or file, if requested */
     if (tty_name && send_count > 0)
     {
     SEQUENCE8BIT s8;   /* used by send_chars below (cf. stty.h) */
     int fdrdr = 0;
 
-        /* Write test array data (see sst.h) to TTY (or file) */
         ssize_t sc;
 
         /* Open for write and non-block if that option was supplied */
@@ -224,16 +240,18 @@ main(int argc, char** argv)
                           );
         }
 
+        /* Wait for reader to report how many characters were read */
         if (fork_reader)
         {
             RECVSTATUS buf;
             fprintf(stderr,"Waiting for forked reader to"
-                           " finish and send data to pipe...\n"
+                           " finish and send data to pipe ...\n"
                    );
             if ((sizeof buf) != read(fdrdr,&buf,sizeof buf))
             {
-                perror("Retrieving reader result from pipe"); 
+                perror("Error retrieving reader result from pipe");
                 close(fdrdr);
+                close(fd);
                 return -1;
             }
             close(fdrdr);
@@ -250,7 +268,7 @@ main(int argc, char** argv)
         }
 
         close(fd);
-    }
+    } /* if (tty_name && send_count > 0) - Write test array data */
 
     return 0;
 }

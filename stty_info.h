@@ -1,6 +1,13 @@
 #ifndef __STTY_INFO_H__
 #define __STTY_INFO_H__
 
+/***********************************************************************
+ * Parameterize contents of [struct termios*], to simplify configuration
+ * of serial ports (TTYs)
+ *
+ * *** N.B. Heavily borrowed from Linux coreutils/stty.c
+ */
+
 #include <stddef.h>
 #include <asm/termbits.h>
 
@@ -11,12 +18,28 @@
 #endif/*BOTHER*/
 #endif/*0*/
 
+#if 0
+
+/* Typical (expected) [struct termios*] layout */
+
+struct termios2 {
+        tcflag_t c_iflag;              /* input mode flags */
+        tcflag_t c_oflag;              /* output mode flags */
+        tcflag_t c_cflag;              /* control mode flags */
+        tcflag_t c_lflag;              /* local mode flags */
+        cc_t c_line;                   /* line discipline */
+        cc_t c_cc[NCCS];               /* control characters */
+        speed_t c_ispeed;              /* input speed */
+        speed_t c_ospeed;              /* output speed */
+};
+
+#endif/*0*/
+
 /* mode_info and control_info */
 
-/***********************************************************************
- Borrowing from coreutils/stty.c
+/* Enumerate members of [struct termios2] to allow declaring to which
+ * member a "parameterized" mode applies.
  */
-/* Which member(s) of 'struct termios' a mode uses.  */
 enum mode_type
   {
     control, input, output, local, combination
@@ -30,13 +53,13 @@ enum mode_type
 struct mode_info
   {
     char const *name;           /* Name given on command line.  */
-    enum mode_type type;        /* Which structure element to change. */
+    enum mode_type type;        /* Enum of structure element to change. */
     char flags;                 /* Setting and display options.  */
     unsigned long bits;         /* Bits to set for this mode.  */
     unsigned long mask;         /* Other bits to turn off for this mode.  */
   };
 
-/* The various tty [struct termios] mode flags, by name */
+/* Parameterize [struct termios2] mode flags by name */
 static struct mode_info const mode_info[] =
 {
   {"parenb", control, REV, PARENB, 0},
@@ -160,8 +183,10 @@ static struct mode_info const mode_info[] =
   {"extproc", local, REV, EXTPROC, 0},
 #endif
 
+  /* List termination */
   {NULL, control, 0, 0, 0}
-};
+}; /* static struct mode_info const mode_info[]
+      Parameterize [struct termios2] mode flags */
 
 /* Control character settings.  */
 struct control_info
@@ -179,7 +204,7 @@ struct control_info
 #define CEOL2 _POSIX_VDISABLE
 #endif
 
-/* The various tty control characters, by name */
+/* Parameterize tty control characters, by name */
 static struct control_info const control_info[] =
 {
   {"intr", CINTR, VINTR},
@@ -229,10 +254,13 @@ static struct control_info const control_info[] =
   /* These must be last because of the display routines. */
   //{"min", 1, VMIN},
   //{"time", 0, VTIME},
-  {NULL, 0, 0}
-};
 
-/* Baud rate settings */
+  /* List termination */
+  {NULL, 0, 0}
+}; /* static struct control_info const control_info[]
+      Parameterize tty control characters */
+
+/* Struct used to populate list of parameterized aud rate settings */
 struct speed_map
 {
   char const *string;		/* ASCII representation. */
@@ -240,7 +268,7 @@ struct speed_map
   unsigned long int value;	/* Numeric value. */
 };
 
-/* The various tty baud rates, by name */
+/* Parameterize tty baud rates, by name */
 static struct speed_map const speeds[] =
 {
   {"0", B0, 0},
@@ -315,7 +343,13 @@ static struct speed_map const speeds[] =
   {"4000000", B4000000, 4000000},
   {"4M", B4000000, 4000000},
 #endif
+
 #ifdef BOTHER
+/* If the .speed internal form member is the macro BOTHER, then it does
+ * not specify a specific baudrate known to the system; and the actual
+ * rate will be in the member .value.  It is assumed the tty driver
+ * knows how to handle these baudrates.
+ */
   {"8000000", BOTHER, 8000000},
   {"8M", BOTHER, 8000000},
   {"12000000", BOTHER, 12000000},
@@ -323,7 +357,11 @@ static struct speed_map const speeds[] =
   {"12500000", BOTHER, 12500000},
   {"12.5M", BOTHER, 12500000},
 #endif
+
+  /* List termination */
   {NULL, 0, 0}
-};
+}; /* static struct speed_map const speeds[]
+      Parameterize tty baud rates, by name */
+{
 
 #endif/*__STTY_INFO_H__*/
