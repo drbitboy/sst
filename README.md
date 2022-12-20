@@ -17,12 +17,16 @@ See run_sst.sh for typical executions
 * NVIDIA Jetson platform with Tegra High-Speed serial port
   * See sub-directory Jetson/README.md
    * Works _at some baudrates_ on Tegra High-Speed serial port (--tty=/dev/ttyTHS0)
+     * At lower baudrates (at least up to 115.2k, and probably higher)
+       * All characters that are written appear are read
      * At 4Mbaud
-       * Starts missing characters
+       * Starts missing characters (order 1E-5)
      * At 8Mbaud, 12Mbaud and 12.5Mbaud
        * **_Entire system crashes_** and reboots
          * _At first_, a soft reset (reboot) recovers functionality
-         * Eventually, system is unable to write and/or read data from THS0, and a hard reset is required.
+         * Eventually, system is unable to write and/or read data from THS0,
+           * _At any baudrate_
+           * A hard reset is required to restore proper functionality
 
 ### Command-line Options
 * --tty=/dev/tty...
