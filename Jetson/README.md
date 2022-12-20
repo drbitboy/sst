@@ -1,10 +1,12 @@
 # Configuration of NVIDIA Jetson platform
 
     % uname -a
+
     Linux ubuntu 5.10.104-tegra #1 SMP PREEMPT Wed Aug 10 20:17:07 PDT 2022 aarch64 aarch64 aarch64 GNU/Linux
 
 
     % cat /etc/os-release
+
     NAME="Ubuntu"
     VERSION="20.04.4 LTS (Focal Fossa)"
     ID=ubuntu
@@ -20,14 +22,16 @@
 
 
     % ls -l /dev/tty[^0-9Sp]*
+
     crw--w---- 1 root tty     511, 0 Dec 20 09:30 /dev/ttyGS0
-    crw--w---- 1 root tty     237, 0 Dec 20 10:06 /dev/ttyTCU0
+    crw-rw---- 1 root dialout 237, 0 Dec 20 10:06 /dev/ttyTCU0
     crw-rw---- 1 root dialout 238, 0 Dec 20 10:10 /dev/ttyTHS0
     crw-rw---- 1 root dialout 238, 1 Dec 20 09:30 /dev/ttyTHS1
     crw-rw---- 1 root dialout 238, 4 Dec 20 09:30 /dev/ttyTHS4
 
 
     % stty -a -F /dev/ttyTHS0
+
     speed 115200 baud; rows 0; columns 0; line = 0;
     intr = <undef>; quit = <undef>; erase = <undef>; kill = <undef>; eof = <undef>; eol = <undef>; eol2 = <undef>; swtch = <undef>; start = <undef>; stop = <undef>;
     susp = <undef>; rprnt = <undef>; werase = <undef>; lnext = <undef>; discard = <undef>; min = 1; time = 0;
@@ -38,6 +42,7 @@
 
 
     % cat /proc/cpuinfo
+
     processor       : 0
     model name      : ARMv8 Processor rev 0 (v8l)
     BogoMIPS        : 62.50
