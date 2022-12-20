@@ -376,7 +376,7 @@ stty_raw_config(char* tty_name, char* alt_settings)
     return 0;
 }
 
-/* Configure serial port (/dev/tty*) for raw data transmission */
+/* Configure serial port (/dev/tty*) speed (baud rate) */
 static int
 stty_set_speed(char* tty_name, char* speed_token)
 {
