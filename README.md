@@ -11,10 +11,16 @@ See run_sst.sh for typical executions
 ## Current experience
 
 * Used with loopback in place, so any characters written can be read and checked
-* Works on USB-dongle serial port (--tty=/dev/ttyUSB0) on a laptop under recent Ubuntu distribution
-  * Starts missing characters at higher baud rates (155k or higher)
-* Works _at some baudrates_ on Tegra High-Speed serial port (--tty=/dev/ttyTHS0) in the NVIDIA Jetson platform
+* Laptop with USB-dongle serial port
+  * Works _at some baudrates_ on USB-dongle serial port (--tty=/dev/ttyUSB0) on a laptop under recent Ubuntu distribution
+    * Starts missing characters at higher baud rates (115.2kbaud or higher)
+* NVIDIA Jetson platform with Tegra High-Speed serial port
   * See sub-directory Jetson/README.md
+   * Works _at some baudrates_ on Tegra High-Speed serial port (--tty=/dev/ttyTHS0)
+     * At 4Mbaud
+       * Starts missing characters
+     * At 8Mbaud, 12Mbaud and 12.5Mbaud
+       * **_Entire system crashes_** and reboots
 
 ### Command-line Options
 * --tty=/dev/tty...
