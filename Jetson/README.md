@@ -1,3 +1,4 @@
+# Configuration of NVIDIA Jetson platform
 
     % uname -a
     Linux ubuntu 5.10.104-tegra #1 SMP PREEMPT Wed Aug 10 20:17:07 PDT 2022 aarch64 aarch64 aarch64 GNU/Linux
@@ -16,6 +17,14 @@
     PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
     VERSION_CODENAME=focal
     UBUNTU_CODENAME=focal
+
+
+    % ls -l /dev/tty[^0-9Sp]*
+    crw--w---- 1 root tty     511, 0 Dec 20 09:30 /dev/ttyGS0
+    crw--w---- 1 root tty     237, 0 Dec 20 10:06 /dev/ttyTCU0
+    crw-rw---- 1 root dialout 238, 0 Dec 20 10:10 /dev/ttyTHS0
+    crw-rw---- 1 root dialout 238, 1 Dec 20 09:30 /dev/ttyTHS1
+    crw-rw---- 1 root dialout 238, 4 Dec 20 09:30 /dev/ttyTHS4
 
 
     % stty -a -F /dev/ttyTHS0
