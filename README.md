@@ -1,6 +1,12 @@
 # sst
 TTY stress test - write test data to a serial port
 
+## Usage
+
+    [make [clean ]all]
+    ./sst[ --option[=...] [--option... [...]]]
+
+
 See run_sst.sh for typical executions
 
 ### Command-line Options
