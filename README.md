@@ -21,6 +21,8 @@ See run_sst.sh for typical executions
        * Starts missing characters
      * At 8Mbaud, 12Mbaud and 12.5Mbaud
        * **_Entire system crashes_** and reboots
+         * _At first_, a soft reset (reboot) recovers functionality
+         * Eventually, system is unable to write and/or read data from THS0, and a hard reset is required.
 
 ### Command-line Options
 * --tty=/dev/tty...
