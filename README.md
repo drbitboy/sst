@@ -6,8 +6,15 @@ TTY stress test - write test data to a serial port
     [make [clean ]all]
     ./sst[ --option[=...] [--option... [...]]]
 
-
 See run_sst.sh for typical executions
+
+## Current experience
+
+* Used with loopback in place, so any characters written can be read and checked
+* Works on USB-dongle serial port (--tty=/dev/ttyUSB0) on a laptop under recent Ubuntu distribution
+  * Starts missing characters at higher baud rates (155k or higher)
+* Works _at some baudrates_ on Tegra High-Speed serial port (--tty=/dev/ttyTHS0) in the NVIDIA Jetson platform
+  * See sub-directory Jetson/CONFIGURATION.md
 
 ### Command-line Options
 * --tty=/dev/tty...
