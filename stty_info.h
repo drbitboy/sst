@@ -362,6 +362,5 @@ static struct speed_map const speeds[] =
   {NULL, 0, 0}
 }; /* static struct speed_map const speeds[]
       Parameterize tty baud rates, by name */
-{
 
 #endif/*__STTY_INFO_H__*/
