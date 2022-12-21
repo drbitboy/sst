@@ -3,7 +3,12 @@
 ### - script to run Serial Stress Test (sst)
 ###
 ###     Usage:  source run_sst
-### Alternate: .. run_sst
+### Alternate: . run_sst
+###
+### The last --speed= and --send-count= command-line options below are
+### the ones that will be used; the duplicate settings here are for
+### convenience i.e. by reordering those lines with a simple Yank-Paste
+### (vi) the speed and character count settings can be easily changed.
 
 ./sst --tty=/dev/ttyTHS0 \
       --speed=115200 --send-count=115200 \
