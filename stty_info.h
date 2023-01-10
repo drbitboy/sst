@@ -350,8 +350,8 @@ static struct speed_map const speeds[] =
  * rate will be in the member .value.  It is assumed the tty driver
  * knows how to handle these baudrates.
  */
-  {"8000000", BOTHER, 8000000},
-  {"8M", BOTHER, 8000000},
+  {"8000000", BOTHER, 8390625},
+  {"8M", BOTHER, 8390625},
   {"12000000", BOTHER, 12000000},
   {"12M", BOTHER, 12000000},
   {"12500000", BOTHER, 12500000},

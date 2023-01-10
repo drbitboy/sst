@@ -13,10 +13,9 @@
 ./sst --tty=/dev/ttyTHS0 \
       --speed=115200 --send-count=115200 \
       --speed=12.5M --send-count=12500000 \
-      --speed=8M --send-count=8000000 \
       --speed=4M --send-count=4000000 \
+      --speed=8M --send-count=8000000 \
       --open-non-blocking \
-      --fork-reader \
       --do-raw-config \
       --raw-config-debug-speed \
       --debug \
