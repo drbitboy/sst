@@ -11,6 +11,10 @@ opts = dict(baudrate=12500000
            ,timeout=10.0
            )
 
+buf = bytes(list(range(33,127))+[10]).replace(b'\\',b'').replace(b"'",b"")
+Lbufm1 = (10*len(buf)) - 1
+Lbufm2 = Lbufm1 - 1
+
 def reader():
     ser = serial.Serial(**opts)
     ct = 0
@@ -19,13 +23,12 @@ def reader():
         total_count += len(buf)
         if not ct: print((buf,))
         ct += 1
-        if ct > 94093: ct -= 94094
+        if ct > Lbufm2: ct -= Lbufm1
     opts.update(dict(close=ser.close(),total_count=total_count))
     print(opts)
 
 def writer():
     ser = serial.Serial(**opts)
-    buf = bytes(list(range(33,127))+[10])
     mL = -len(buf) - 1
     baudrate = total_count = opts['baudrate']
     dlog_count = total_count // 25
