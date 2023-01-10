@@ -17,10 +17,9 @@ def reader():
     total_count = 0
     for buf in ser.iread_until():
         total_count += len(buf)
-        if not ct:
-            print((buf,))
-        elif ct > 94093: print(ct) ; ct -= 94094
+        if not ct: print((buf,))
         ct += 1
+        if ct > 94093: ct -= 94094
     opts.update(dict(close=ser.close(),total_count=total_count))
     print(opts)
 
@@ -39,6 +38,7 @@ def writer():
                 if total_count <= log_count:
                     print(total_count)
                     log_count -= dlog_count
+                if total_count < 1: break
     opts.update(dict(close=ser.close(),total_count=baudrate-total_count))
     print(opts)
 
