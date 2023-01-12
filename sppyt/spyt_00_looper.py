@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
 
+# spyt_00_looper.py
+
+Usage = """
+spyt_00_looper.py:  run serial port test 00
+- Newline-terminated lines of varying length
+
+Use two terminal windows, R and W; BASH shown
+
+    Terminal R:
+
+        % sleep 5 ; echo ready ; ./spy.py reader
+
+    Terminal W:
+
+        % ### Wait for "ready" to appear on Terminal R, then
+
+        % time ./spy.py writer
+
+"""
+
 import sys
 try   : import serial
 except: pass
@@ -55,5 +75,5 @@ if "__main__" ==__name__ and sys.argv[1:]:
         try   : val = eval(sval)
         except: val = sval
         opts[key] = val
-        
+
     func()

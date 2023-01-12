@@ -69,9 +69,9 @@ See run_sst.sh for typical executions
 
 ### Manifest
 
-#### Python serial tests
-* py_serial_testing/
-  * See py_serial_testing/README.md for more detail
+#### Serial-port Python Tests
+* sppyt/
+  * See sppyt/README.md for more detail
 
 #### Script to run sst application; to be edited as needed
 * run_sst.sh
