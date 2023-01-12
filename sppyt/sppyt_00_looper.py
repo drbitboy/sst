@@ -4,19 +4,20 @@
 
 Usage = """
 spyt_00_looper.py:  run serial port test 00
+
 - Newline-terminated lines of varying length
 
 Use two terminal windows, R and W; BASH shown
 
     Terminal R:
 
-        % sleep 5 ; echo ready ; ./spy.py reader
+        % sleep 5 ; echo ready ; ./sppyt_00_looper.py reader baudrate=115200
 
     Terminal W:
 
         % ### Wait for "ready" to appear on Terminal R, then
 
-        % time ./spy.py writer
+        % time ./sppyt_00_looper.py writer baudrate=115200
 
 """
 
